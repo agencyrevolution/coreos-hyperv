@@ -3,7 +3,7 @@
 ---
 hostname: {{VM_NAME}}
 ssh_authorized_keys:
-  - ssh-rsa INSERT_PUBLIC_KEY_HERE
+  - ssh-rsa PUBLIC_KEY
 coreos:
   etcd2:
     name: {{VM_NAME}}

@@ -1,0 +1,57 @@
+#cloud-config
+
+---
+hostname: k8s-master
+ssh_authorized_keys:
+  - ssh-rsa PUBLIC_KEY
+coreos:
+  etcd2:
+    name: k8s-master
+    discovery: {{ETCD_DISCOVERY_TOKEN}}
+    advertise-client-urls: http://{{IP_ADDRESS[NET_0]}}:2379
+    initial-advertise-peer-urls: http://{{IP_ADDRESS[NET_0]}}:2380
+    listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+    listen-peer-urls: http://{{IP_ADDRESS[NET_0]}}:2380
+  fleet:
+    public-ip: {{IP_ADDRESS[NET_0]}}
+    metadata: cluster={{CLUSTER_NAME}},machine=k8s-master
+  units:
+    - name: static.network
+      command: start
+      content: |
+        [Match]
+        Name=eth0
+
+        [Network]
+        Address={{IP_ADDRESS[NET_0]}}/{{SUBNET_BITS[NET_0]}}
+        DNS={{DNS_SERVER_0[NET_0]}}
+        DNS={{DNS_SERVER_1[NET_0]}}
+        Gateway={{GATEWAY[NET_0]}}
+    - name: docker-tcp.socket
+      command: start
+      enable: true
+      content: |
+        [Unit]
+        Descritption=Docker Socket for the API
+
+        [Socket]
+        ListenStream=2375
+        BindIPv6Only=both
+        Service=docker.service
+
+        [Install]
+        WantedBy=sockets.target
+    - name: etcd2.service
+      command: start
+    - name: fleet.service
+      command: start
+  update:
+    reboot-strategy: etcd-lock
+    group: {{CHANNEL}}
+manage_etc_hosts: localhost
+write_files:
+  - path: /etc/environment
+    permissions: 0644
+    content: |
+      COREOS_PUBLIC_IPV4={{IP_ADDRESS[NET_0]}}
+      COREOS_PRIVATE_IPV4={{IP_ADDRESS[NET_0]}}
