@@ -1,12 +1,12 @@
 #cloud-config
 
 ---
-hostname: k8s-master
+hostname: {{VM_NAME}}
 ssh_authorized_keys:
   - ssh-rsa PUBLIC_KEY
 coreos:
   etcd2:
-    name: k8s-master
+    name: {{VM_NAME}}
     discovery: {{ETCD_DISCOVERY_TOKEN}}
     advertise-client-urls: http://{{IP_ADDRESS[NET_0]}}:2379
     initial-advertise-peer-urls: http://{{IP_ADDRESS[NET_0]}}:2380
@@ -14,7 +14,7 @@ coreos:
     listen-peer-urls: http://{{IP_ADDRESS[NET_0]}}:2380
   fleet:
     public-ip: {{IP_ADDRESS[NET_0]}}
-    metadata: cluster={{CLUSTER_NAME}},machine=k8s-master
+    metadata: cluster={{CLUSTER_NAME}},machine={{VM_NAME}}
   units:
     - name: static.network
       command: start
@@ -47,11 +47,15 @@ coreos:
       command: start
   update:
     reboot-strategy: etcd-lock
-    group: {{CHANNEL}}
-manage_etc_hosts: localhost
+    group: stable
 write_files:
   - path: /etc/environment
     permissions: 0644
     content: |
       COREOS_PUBLIC_IPV4={{IP_ADDRESS[NET_0]}}
       COREOS_PRIVATE_IPV4={{IP_ADDRESS[NET_0]}}
+  - path: /etc/hosts
+    permissions: 0644
+    content: |
+      127.0.0.1 {{VM_NAME}}
+      10.9.8.10 vietnamstaging
